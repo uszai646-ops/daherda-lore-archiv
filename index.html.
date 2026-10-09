@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daherda — Lore Archive</title>
+<style>
+:root {
+  --bg:#0c0d12; --panel:#151720; --line:#30313d;
+  --text:#eeeaf5; --muted:#aaa6b8; --gold:#d9b779;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:Georgia,serif; line-height:1.6;
+}
+header {
+  padding:26px 18px 18px; text-align:center;
+  border-bottom:1px solid var(--line);
+  background:linear-gradient(145deg,#211b2a,#0c0d12 70%);
+}
+.eyebrow { color:var(--gold); letter-spacing:4px; font-size:11px; }
+h1 { font-size:clamp(32px,8vw,58px); margin:8px 0 0; }
+header p { color:var(--muted); margin:4px 0 16px; }
+nav { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; }
+button, input, select {
+  font:inherit; color:var(--text); background:var(--panel);
+  border:1px solid var(--line); border-radius:8px; padding:10px 12px;
+}
+button { cursor:pointer; }
+button:hover, button.active { border-color:var(--gold); color:var(--gold); }
+main { max-width:1000px; margin:auto; padding:22px 16px 50px; }
+.hero {
+  padding:25px 20px; border:1px solid var(--line);
+  border-radius:14px; background:linear-gradient(120deg,#292033,#151720);
+  margin-bottom:24px;
+}
+.hero h2 { font-size:clamp(25px,6vw,38px); margin:0 0 8px; }
+.hero p { color:var(--muted); max-width:650px; }
+.section-head { margin:28px 0 12px; }
+.controls { display:flex; gap:8px; flex-wrap:wrap; margin:16px 0; }
+.controls input { flex:1; min-width:160px; }
+.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px; }
+.card {
+  background:var(--panel); border:1px solid var(--line);
+  border-radius:12px; overflow:hidden;
+}
+.art {
+  height:125px; display:grid; place-items:center; font-size:42px;
+  background:radial-gradient(ellipse at top,#51405b,#20202d 60%,#151720);
+  border-bottom:1px solid var(--line);
+}
+.card-body { padding:16px; }
+.tag { color:var(--gold); font-size:11px; letter-spacing:2px; text-transform:uppercase; }
+.card h3 { margin:5px 0; font-size:23px; }
+.card p { color:var(--muted); font-size:14px; }
+.card button { width:100%; margin-top:6px; }
+#reader {
+  display:none; border:1px solid var(--line); border-radius:12px;
+  padding:20px; margin:18px 0; background:var(--panel);
+}
+#reader p { white-space:pre-wrap; }
+footer { text-align:center; padding:24px; color:var(--muted); border-top:1px solid var(--line); }
+.small { font-size:12px; color:var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <div class="eyebrow">THE CHRONICLES OF A WORLD</div>
+  <h1>DAHERDA</h1>
+  <p>A living archive of lands, legends and history.</p>
+  <nav>
+    <button class="active" data-filter="All">All Lore</button>
+    <button data-filter="World">World Atlas</button>
+    <button data-filter="Character">Characters</button>
+    <button data-filter="Country">Countries</button>
+    <button data-filter="History">History & Wars</button>
+  </nav>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="eyebrow">ARCHIVE • ESTABLISHED IN THE AGE OF LEGENDS</div>
+    <h2>Every kingdom has a story.</h2>
+    <p>Explore the enormous island-continents, rival powers, legendary
+    figures and conflicts that shaped Daherda. This is the beginning
+    of the official lore archive.</p>
+    <div class="small">FIRST EDITION · WORLD RECORDS</div>
+  </section>
+
+  <h2 class="section-head">Explore the archive</h2>
+  <div class="controls">
+    <input id="search" placeholder="Search characters, places, events...">
+    <select id="sort">
+      <option value="default">Default order</option>
+      <option value="title">Title A–Z</option>
+    </select>
+  </div>
+
+  <section id="reader">
+    <button id="close">← Back to archive</button>
+    <div class="tag" id="readType"></div>
+    <h2 id="readTitle"></h2>
+    <p id="readBody"></p>
+    <div id="readImage"></div>
+  </section>
+
+  <div id="grid" class="grid"></div>
+  <p id="empty" class="small" hidden>No matching lore found.</p>
+</main>
+
+<footer>
+  <div class="eyebrow">DAHERDA LORE ARCHIVE</div>
+  <p>One world. Countless histories.</p>
+  <p class="small">An independent fictional world archive.</p>
+</footer>
+
+<script>
+const entries = [
+  {
+    title:"The Island-Continents",
+    type:"World",
+    symbol:"🌐",
+    summary:"The colossal landmasses that define the known world.",
+    body:"Canon notes:\nTwo enormous islands are considered continents because of their extraordinary size.\n\nAdd the official names, geography, climate and measurements here."
+  },
+  {
+    title:"Valentine",
+    type:"Character",
+    symbol:"♛",
+    summary:"A central figure whose actions shape the course of history.",
+    body:"Canon notes:\nValentine's story and biography belong here.\n\nAdd confirmed titles, alliances, relationships, victories and important dates."
+  },
+  {
+    title:"The Southern Power",
+    type:"Country",
+    symbol:"🏰",
+    summary:"A major power connected to the southern mainland and western islands.",
+    body:"Canon notes:\nA smaller country controlled the route into Valentine's homeland. It was part of a much larger power.\n\nAdd the names, borders, rulers and political relationships when confirmed."
+  },
+  {
+    title:"The Demon Crisis",
+    type:"History",
+    symbol:"⚔",
+    summary:"A crisis affecting the northern region and its surrounding lands.",
+    body:"Canon notes:\nThe original northern region faced attacks from demons.\n\nAdd the beginning of the crisis, important battles, casualties, outcomes and dates."
+  },
+  {
+    title:"The Fleet of One Hundred",
+    type:"History",
+    symbol:"⛵",
+    summary:"Valentine rebuilds a fleet and conquers the smaller country.",
+    body:"Canon notes:\nWith the RB in the north, Valentine had to rebuild a fleet. After assembling roughly one hundred ships, he attracted the smaller country's attention and eventually conquered it.\n\nAdd the exact sequence of events and consequences."
+  }
+];
+
+let selectedType = "All";
+const grid = document.getElementById("grid");
+const search = document.getElementById("search");
+const sort = document.getElementById("sort");
+const reader = document.getElementById("reader");
+
+function render() {
+  const query = search.value.trim().toLowerCase();
+  let list = entries.filter(e =>
+    (selectedType === "All" || e.type === selectedType) &&
+    (e.title + " " + e.summary + " " + e.body)
+      .toLowerCase().includes(query)
+  );
+  if (sort.value === "title") {
+    list.sort((a,b) => a.title.localeCompare(b.title));
+  }
+
+  grid.innerHTML = "";
+  document.getElementById("empty").hidden = list.length > 0;
+
+  list.forEach(e => {
+    const card = document.createElement("article");
+    card.className = "card";
+
+    const art = document.createElement("div");
+    art.className = "art";
+    art.textContent = e.symbol;
+
+    const content = document.createElement("div");
+    content.className = "card-body";
+
+    const tag = document.createElement("div");
+    tag.className = "tag";
+    tag.textContent = e.type;
+
+    const title = document.createElement("h3");
+    title.textContent = e.title;
+
+    const summary = document.createElement("p");
+    summary.textContent = e.summary;
+
+    const button = document.createElement("button");
+    button.textContent = "Read entry →";
+    button.addEventListener("click", () => openEntry(e));
+
+    content.append(tag,title,summary,button);
+    card.append(art,content);
+    grid.append(card);
+  });
+}
+
+function openEntry(e) {
+  document.getElementById("readType").textContent = e.type;
+  document.getElementById("readTitle").textContent = e.title;
+  document.getElementById("readBody").textContent = e.body;
+  document.getElementById("readImage").textContent =
+    e.image ? "Image: " + e.image : "";
+  reader.style.display = "block";
+  reader.scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+document.querySelectorAll("nav button").forEach(button => {
+  button.addEventListener("click", () => {
+    selectedType = button.dataset.filter;
+    document.querySelectorAll("nav button").forEach(b =>
+      b.classList.toggle("active", b === button)
+    );
+    render();
+  });
+});
+
+search.addEventListener("input", render);
+sort.addEventListener("change", render);
+document.getElementById("close").addEventListener("click", () => {
+  reader.style.display = "none";
+});
+
+render();
+</script>
+</body>
+</html>
