@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -19,16 +20,18 @@ header {
   border-bottom:1px solid var(--line);
   background:linear-gradient(145deg,#211b2a,#0c0d12 70%);
 }
-.eyebrow { color:var(--gold); letter-spacing:4px; font-size:11px; }
+.eyebrow { color:var(--gold); letter-spacing:3px; font-size:11px; }
 h1 { font-size:clamp(32px,8vw,58px); margin:8px 0 0; }
 header p { color:var(--muted); margin:4px 0 16px; }
 nav { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; }
-button, input, select {
+button, input, select, textarea {
   font:inherit; color:var(--text); background:var(--panel);
   border:1px solid var(--line); border-radius:8px; padding:10px 12px;
+  max-width:100%;
 }
 button { cursor:pointer; }
 button:hover, button.active { border-color:var(--gold); color:var(--gold); }
+button:disabled { opacity:.55; cursor:wait; }
 main { max-width:1000px; margin:auto; padding:22px 16px 50px; }
 .hero {
   padding:25px 20px; border:1px solid var(--line);
@@ -40,28 +43,38 @@ main { max-width:1000px; margin:auto; padding:22px 16px 50px; }
 .section-head { margin:28px 0 12px; }
 .controls { display:flex; gap:8px; flex-wrap:wrap; margin:16px 0; }
 .controls input { flex:1; min-width:160px; }
-.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px; }
+.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr)); gap:14px; }
 .card {
   background:var(--panel); border:1px solid var(--line);
-  border-radius:12px; overflow:hidden;
+  border-radius:12px; overflow:hidden; min-width:0;
 }
 .art {
-  height:125px; display:grid; place-items:center; font-size:42px;
+  height:150px; display:grid; place-items:center; font-size:42px;
   background:radial-gradient(ellipse at top,#51405b,#20202d 60%,#151720);
-  border-bottom:1px solid var(--line);
+  border-bottom:1px solid var(--line); overflow:hidden;
 }
-.card-body { padding:16px; }
+.art img { width:100%; height:100%; object-fit:cover; }
+.card-body { padding:16px; overflow-wrap:anywhere; }
 .tag { color:var(--gold); font-size:11px; letter-spacing:2px; text-transform:uppercase; }
 .card h3 { margin:5px 0; font-size:23px; }
-.card p { color:var(--muted); font-size:14px; }
+.card p { color:var(--muted); font-size:14px; white-space:pre-wrap; }
 .card button { width:100%; margin-top:6px; }
-#reader {
+#reader, #loginPanel, #editor {
   display:none; border:1px solid var(--line); border-radius:12px;
   padding:20px; margin:18px 0; background:var(--panel);
+  overflow-wrap:anywhere;
 }
 #reader p { white-space:pre-wrap; }
-footer { text-align:center; padding:24px; color:var(--muted); border-top:1px solid var(--line); }
+#readImage img { display:block; max-width:100%; max-height:480px; margin-top:14px; border-radius:8px; }
+.field { display:grid; gap:5px; margin:12px 0; }
+.field input, .field select, .field textarea { width:100%; }
+.field textarea { min-height:130px; resize:vertical; }
+.actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.actions button { flex:1; }
 .small { font-size:12px; color:var(--muted); }
+#status { margin:12px 0; overflow-wrap:anywhere; }
+footer { text-align:center; padding:24px; color:var(--muted); border-top:1px solid var(--line); }
+[hidden] { display:none !important; }
 </style>
 </head>
 <body>
@@ -74,7 +87,7 @@ footer { text-align:center; padding:24px; color:var(--muted); border-top:1px sol
     <button data-filter="World">World Atlas</button>
     <button data-filter="Character">Characters</button>
     <button data-filter="Country">Countries</button>
-    <button data-filter="History">History & Wars</button>
+    <button data-filter="History">History &amp; Wars</button>
   </nav>
 </header>
 
@@ -83,26 +96,88 @@ footer { text-align:center; padding:24px; color:var(--muted); border-top:1px sol
     <div class="eyebrow">ARCHIVE • ESTABLISHED IN THE AGE OF LEGENDS</div>
     <h2>Every kingdom has a story.</h2>
     <p>Explore the enormous island-continents, rival powers, legendary
-    figures and conflicts that shaped Daherda. This is the beginning
-    of the official lore archive.</p>
+    figures and conflicts that shaped Daherda. This is the official lore archive.</p>
     <div class="small">FIRST EDITION · WORLD RECORDS</div>
   </section>
 
+  <section id="loginPanel">
+    <h2>Owner access</h2>
+    <p class="small">Sign in with the account you already created in Supabase Authentication.</p>
+    <form id="loginForm">
+      <label class="field">Email
+        <input id="email" type="email" autocomplete="username" required>
+      </label>
+      <label class="field">Password
+        <input id="password" type="password" autocomplete="current-password" required>
+      </label>
+      <button type="submit">Sign in</button>
+    </form>
+    <p id="loginMessage" class="small" role="status"></p>
+  </section>
+
+  <section id="editor">
+    <h2 id="editorHeading">Create lore entry</h2>
+    <p class="small">Only your authorized account can save changes.</p>
+    <form id="entryForm">
+      <label class="field">Title
+        <input id="entryTitle" maxlength="160" required>
+      </label>
+      <label class="field">Category
+        <select id="entryCategory">
+          <option value="World">World</option>
+          <option value="Character">Character</option>
+          <option value="Country">Country</option>
+          <option value="History">History</option>
+          <option value="General">General</option>
+        </select>
+      </label>
+      <label class="field">Short summary
+        <textarea id="entrySummary" maxlength="1000" required></textarea>
+      </label>
+      <label class="field">Full lore
+        <textarea id="entryContent" required></textarea>
+      </label>
+      <label class="field">Picture (optional)
+        <input id="entryImage" type="file" accept="image/png,image/jpeg,image/webp">
+        <span class="small">PNG, JPG or WebP. Choose an image from your phone.</span>
+      </label>
+      <label class="field">
+        <span><input id="entryPublished" type="checkbox" checked> Published — visible to visitors</span>
+      </label>
+      <div class="actions">
+        <button id="saveEntry" type="submit">Save entry</button>
+        <button id="cancelEdit" type="button">Cancel</button>
+      </div>
+    </form>
+    <p id="editorMessage" role="status" class="small"></p>
+  </section>
+
+  <div class="actions" id="ownerActions" hidden>
+    <button id="newEntry" type="button">＋ New lore entry</button>
+    <button id="logout" type="button">Sign out</button>
+  </div>
+
   <h2 class="section-head">Explore the archive</h2>
   <div class="controls">
-    <input id="search" placeholder="Search characters, places, events...">
-    <select id="sort">
+    <input id="search" placeholder="Search characters, places, events..." aria-label="Search lore">
+    <select id="sort" aria-label="Sort lore">
       <option value="default">Default order</option>
       <option value="title">Title A–Z</option>
     </select>
   </div>
 
+  <p id="status" class="small" role="status">Connecting to the archive…</p>
+
   <section id="reader">
-    <button id="close">← Back to archive</button>
+    <button id="close" type="button">← Back to archive</button>
     <div class="tag" id="readType"></div>
     <h2 id="readTitle"></h2>
     <p id="readBody"></p>
     <div id="readImage"></div>
+    <div class="actions" id="readerOwnerActions" hidden>
+      <button id="editEntry" type="button">Edit this entry</button>
+      <button id="deleteEntry" type="button">Delete this entry</button>
+    </div>
   </section>
 
   <div id="grid" class="grid"></div>
@@ -115,104 +190,273 @@ footer { text-align:center; padding:24px; color:var(--muted); border-top:1px sol
   <p class="small">An independent fictional world archive.</p>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const entries = [
-  {
-    title:"The Island-Continents",
-    type:"World",
-    symbol:"🌐",
-    summary:"The colossal landmasses that define the known world.",
-    body:"Canon notes:\nTwo enormous islands are considered continents because of their extraordinary size.\n\nAdd the official names, geography, climate and measurements here."
-  },
-  {
-    title:"Valentine",
-    type:"Character",
-    symbol:"♛",
-    summary:"A central figure whose actions shape the course of history.",
-    body:"Canon notes:\nValentine's story and biography belong here.\n\nAdd confirmed titles, alliances, relationships, victories and important dates."
-  },
-  {
-    title:"The Southern Power",
-    type:"Country",
-    symbol:"🏰",
-    summary:"A major power connected to the southern mainland and western islands.",
-    body:"Canon notes:\nA smaller country controlled the route into Valentine's homeland. It was part of a much larger power.\n\nAdd the names, borders, rulers and political relationships when confirmed."
-  },
-  {
-    title:"The Demon Crisis",
-    type:"History",
-    symbol:"⚔",
-    summary:"A crisis affecting the northern region and its surrounding lands.",
-    body:"Canon notes:\nThe original northern region faced attacks from demons.\n\nAdd the beginning of the crisis, important battles, casualties, outcomes and dates."
-  },
-  {
-    title:"The Fleet of One Hundred",
-    type:"History",
-    symbol:"⛵",
-    summary:"Valentine rebuilds a fleet and conquers the smaller country.",
-    body:"Canon notes:\nWith the RB in the north, Valentine had to rebuild a fleet. After assembling roughly one hundred ships, he attracted the smaller country's attention and eventually conquered it.\n\nAdd the exact sequence of events and consequences."
-  }
-];
+/*
+  Browser configuration:
+  The URL and publishable key are intended for public frontend use.
+  Never place a Supabase secret or service_role key in this file.
+*/
+const SUPABASE_URL = "https://jufnhnhsioyrljkzzzwb.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_jOOWzXP5saHfM5UsmQJc4g_L_BbSRYs";
+const OWNER_UID = "90dcf904-1409-4680-a108-a81c618fd873";
+const BUCKET = "lore-images";
 
-let selectedType = "All";
 const grid = document.getElementById("grid");
 const search = document.getElementById("search");
 const sort = document.getElementById("sort");
 const reader = document.getElementById("reader");
+const statusEl = document.getElementById("status");
+
+const starterEntries = [
+  {
+    id:"starter-world", title:"The Island-Continents", category:"World",
+    summary:"The colossal landmasses that define the known world.",
+    content:"Canon notes:\nTwo enormous islands are considered continents because of their extraordinary size.\n\nAdd the official names, geography, climate and measurements here.",
+    image_urls:[], published:true, isStarter:true
+  },
+  {
+    id:"starter-valentine", title:"Valentine", category:"Character",
+    summary:"A central figure whose actions shape the course of history.",
+    content:"Canon notes:\nValentine's story and biography belong here.\n\nAdd confirmed titles, alliances, relationships, victories and important dates.",
+    image_urls:[], published:true, isStarter:true
+  },
+  {
+    id:"starter-south", title:"The Southern Power", category:"Country",
+    summary:"A major power connected to the southern mainland and western islands.",
+    content:"Canon notes:\nA smaller country controlled the route into Valentine's homeland. It was part of a much larger power.\n\nAdd the names, borders, rulers and political relationships when confirmed.",
+    image_urls:[], published:true, isStarter:true
+  },
+  {
+    id:"starter-crisis", title:"The Demon Crisis", category:"History",
+    summary:"A crisis affecting the northern region and its surrounding lands.",
+    content:"Canon notes:\nThe original northern region faced attacks from demons.\n\nAdd the beginning of the crisis, important battles, outcomes and dates.",
+    image_urls:[], published:true, isStarter:true
+  },
+  {
+    id:"starter-fleet", title:"The Fleet of One Hundred", category:"History",
+    summary:"Valentine rebuilds a fleet and conquers the smaller country.",
+    content:"Canon notes:\nWith the RB in the north, Valentine had to rebuild a fleet. After assembling roughly one hundred ships, he attracted the smaller country's attention and eventually conquered it.\n\nAdd the exact sequence of events and consequences.",
+    image_urls:[], published:true, isStarter:true
+  }
+];
+
+let entries = [];
+let selectedType = "All";
+let currentUser = null;
+let editingId = null;
+let currentEntry = null;
+let loadedFromDatabase = false;
+let supabaseClient = null;
+
+function setStatus(message) {
+  statusEl.textContent = message;
+}
+
+function setEditorMessage(message) {
+  document.getElementById("editorMessage").textContent = message;
+}
+
+function isOwner() {
+  return !!currentUser && currentUser.id === OWNER_UID;
+}
+
+function escapeText(value) {
+  return String(value == null ? "" : value);
+}
+
+function firstImage(entry) {
+  return Array.isArray(entry.image_urls) ? entry.image_urls[0] : "";
+}
 
 function render() {
   const query = search.value.trim().toLowerCase();
   let list = entries.filter(e =>
-    (selectedType === "All" || e.type === selectedType) &&
-    (e.title + " " + e.summary + " " + e.body)
+    (selectedType === "All" || e.category === selectedType) &&
+    (e.published || isOwner()) &&
+    (escapeText(e.title) + " " + escapeText(e.summary) + " " + escapeText(e.content))
       .toLowerCase().includes(query)
   );
+
   if (sort.value === "title") {
-    list.sort((a,b) => a.title.localeCompare(b.title));
+    list.sort((a,b) => escapeText(a.title).localeCompare(escapeText(b.title)));
   }
 
-  grid.innerHTML = "";
+  grid.replaceChildren();
   document.getElementById("empty").hidden = list.length > 0;
 
-  list.forEach(e => {
+  for (const entry of list) {
     const card = document.createElement("article");
     card.className = "card";
 
     const art = document.createElement("div");
     art.className = "art";
-    art.textContent = e.symbol;
+    const imageUrl = firstImage(entry);
+    if (imageUrl) {
+      const image = document.createElement("img");
+      image.src = imageUrl;
+      image.alt = entry.title + " artwork";
+      image.loading = "lazy";
+      art.append(image);
+    } else {
+      art.textContent = ({
+        World:"🌐", Character:"♛", Country:"🏰", History:"⚔", General:"📜"
+      })[entry.category] || "📜";
+    }
 
     const content = document.createElement("div");
     content.className = "card-body";
 
     const tag = document.createElement("div");
     tag.className = "tag";
-    tag.textContent = e.type;
+    tag.textContent = entry.category || "General";
 
     const title = document.createElement("h3");
-    title.textContent = e.title;
+    title.textContent = entry.title;
 
     const summary = document.createElement("p");
-    summary.textContent = e.summary;
+    summary.textContent = entry.summary;
 
-    const button = document.createElement("button");
-    button.textContent = "Read entry →";
-    button.addEventListener("click", () => openEntry(e));
+    const openButton = document.createElement("button");
+    openButton.textContent = "Read entry →";
+    openButton.addEventListener("click", () => openEntry(entry));
 
-    content.append(tag,title,summary,button);
-    card.append(art,content);
+    content.append(tag, title, summary, openButton);
+    if (isOwner() && !entry.isStarter) {
+      const editButton = document.createElement("button");
+      editButton.textContent = "Edit";
+      editButton.addEventListener("click", () => startEdit(entry));
+      content.append(editButton);
+    }
+
+    card.append(art, content);
     grid.append(card);
-  });
+  }
 }
 
-function openEntry(e) {
-  document.getElementById("readType").textContent = e.type;
-  document.getElementById("readTitle").textContent = e.title;
-  document.getElementById("readBody").textContent = e.body;
-  document.getElementById("readImage").textContent =
-    e.image ? "Image: " + e.image : "";
+function openEntry(entry) {
+  currentEntry = entry;
+  document.getElementById("readType").textContent = entry.category || "General";
+  document.getElementById("readTitle").textContent = entry.title || "";
+  document.getElementById("readBody").textContent = entry.content || "";
+
+  const imageBox = document.getElementById("readImage");
+  imageBox.replaceChildren();
+  const imageUrl = firstImage(entry);
+  if (imageUrl) {
+    const image = document.createElement("img");
+    image.src = imageUrl;
+    image.alt = entry.title + " artwork";
+    imageBox.append(image);
+  }
+
+  document.getElementById("readerOwnerActions").hidden =
+    !isOwner() || !!entry.isStarter;
+
   reader.style.display = "block";
-  reader.scrollIntoView({behavior:"smooth",block:"start"});
+  reader.scrollIntoView({behavior:"smooth", block:"start"});
+}
+
+function closeReader() {
+  reader.style.display = "none";
+  currentEntry = null;
+}
+
+function showEditor() {
+  if (!isOwner()) {
+    alert("Please sign in with the authorized owner account first.");
+    return;
+  }
+  document.getElementById("editor").style.display = "block";
+  document.getElementById("editor").scrollIntoView({behavior:"smooth", block:"start"});
+}
+
+function resetEditor() {
+  editingId = null;
+  document.getElementById("entryForm").reset();
+  document.getElementById("entryPublished").checked = true;
+  document.getElementById("editorHeading").textContent = "Create lore entry";
+  document.getElementById("saveEntry").textContent = "Save entry";
+  setEditorMessage("");
+  document.getElementById("editor").style.display = "none";
+}
+
+function startEdit(entry) {
+  if (!isOwner() || entry.isStarter) return;
+  editingId = entry.id;
+  document.getElementById("entryTitle").value = entry.title || "";
+  document.getElementById("entryCategory").value = entry.category || "General";
+  document.getElementById("entrySummary").value = entry.summary || "";
+  document.getElementById("entryContent").value = entry.content || "";
+  document.getElementById("entryPublished").checked = !!entry.published;
+  document.getElementById("entryImage").value = "";
+  document.getElementById("editorHeading").textContent = "Edit lore entry";
+  document.getElementById("saveEntry").textContent = "Save changes";
+  showEditor();
+}
+
+async function loadEntries() {
+  if (!supabaseClient) {
+    entries = starterEntries.slice();
+    render();
+    setStatus("Connection could not start. Check the Supabase URL and publishable key.");
+    return;
+  }
+
+  setStatus("Loading lore from Supabase…");
+  const { data, error } = await supabaseClient
+    .from("lore_entries")
+    .select("*")
+    .order("created_at", { ascending:false });
+
+  if (error) {
+    entries = starterEntries.slice();
+    loadedFromDatabase = false;
+    render();
+    setStatus("Could not load saved lore: " + error.message +
+      " The example entries below are temporary and are not saved to the database.");
+    return;
+  }
+
+  loadedFromDatabase = true;
+  entries = (data || []).filter(e => e.published || isOwner());
+
+  if (entries.length === 0 && !isOwner()) {
+    entries = starterEntries.slice();
+    setStatus("The database is connected, but there are no published entries yet. Showing example entries.");
+  } else {
+    setStatus("Connected. " + entries.length + " saved lore entr" +
+      (entries.length === 1 ? "y." : "ies."));
+  }
+  render();
+}
+
+async function uploadImage(file) {
+  if (!file) return null;
+  if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+    throw new Error("Choose a PNG, JPG, or WebP image.");
+  }
+  if (file.size > 8 * 1024 * 1024) {
+    throw new Error("Please choose an image smaller than 8 MB.");
+  }
+
+  const extension = file.type === "image/jpeg" ? "jpg" :
+    file.type === "image/webp" ? "webp" : "png";
+  const path = OWNER_UID + "/" + Date.now() + "-" +
+    Math.random().toString(36).slice(2) + "." + extension;
+
+  const { error } = await supabaseClient.storage
+    .from(BUCKET)
+    .upload(path, file, {
+      cacheControl:"3600",
+      contentType:file.type,
+      upsert:false
+    });
+
+  if (error) throw error;
+
+  const { data } = supabaseClient.storage.from(BUCKET).getPublicUrl(path);
+  return data.publicUrl;
 }
 
 document.querySelectorAll("nav button").forEach(button => {
@@ -227,11 +471,83 @@ document.querySelectorAll("nav button").forEach(button => {
 
 search.addEventListener("input", render);
 sort.addEventListener("change", render);
-document.getElementById("close").addEventListener("click", () => {
-  reader.style.display = "none";
+document.getElementById("close").addEventListener("click", closeReader);
+document.getElementById("newEntry").addEventListener("click", () => {
+  resetEditor();
+  showEditor();
+});
+document.getElementById("cancelEdit").addEventListener("click", resetEditor);
+
+document.getElementById("loginForm").addEventListener("submit", async event => {
+  event.preventDefault();
+  if (!supabaseClient) return;
+  const message = document.getElementById("loginMessage");
+  message.textContent = "Signing in…";
+
+  const { error } = await supabaseClient.auth.signInWithPassword({
+    email:document.getElementById("email").value.trim(),
+    password:document.getElementById("password").value
+  });
+
+  if (error) {
+    message.textContent = "Sign-in failed: " + error.message;
+  } else {
+    message.textContent = "Signed in. Checking owner permissions…";
+  }
 });
 
-render();
-</script>
-</body>
-</html>
+document.getElementById("logout").addEventListener("click", async () => {
+  if (!supabaseClient) return;
+  const { error } = await supabaseClient.auth.signOut();
+  if (error) setStatus("Sign-out failed: " + error.message);
+});
+
+document.getElementById("entryForm").addEventListener("submit", async event => {
+  event.preventDefault();
+  if (!isOwner()) {
+    setEditorMessage("You are not signed in as the authorized owner.");
+    return;
+  }
+  if (!loadedFromDatabase) {
+    setEditorMessage("The database has not loaded successfully. Refresh and check the connection first.");
+    return;
+  }
+
+  const saveButton = document.getElementById("saveEntry");
+  saveButton.disabled = true;
+  setEditorMessage("Saving…");
+
+  try {
+    const title = document.getElementById("entryTitle").value.trim();
+    const category = document.getElementById("entryCategory").value;
+    const summary = document.getElementById("entrySummary").value.trim();
+    const content = document.getElementById("entryContent").value.trim();
+    const published = document.getElementById("entryPublished").checked;
+    const file = document.getElementById("entryImage").files[0];
+
+    let images = [];
+    if (editingId) {
+      const existing = entries.find(e => e.id === editingId);
+      images = existing && Array.isArray(existing.image_urls) ? existing.image_urls.slice() : [];
+    }
+
+    if (file) {
+      const newImageUrl = await uploadImage(file);
+      images = [newImageUrl];
+    }
+
+    const payload = {
+      title,
+      category,
+      summary,
+      content,
+      image_urls:images,
+      published,
+      updated_at:new Date().toISOString()
+    };
+
+    let result;
+    if (editingId) {
+      result = await supabaseClient
+        .from("lore_entries")
+        .update(pay
